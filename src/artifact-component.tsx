@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer, Volume2, VolumeX, Settings, Eye } from 'lucide-react';
+import { Volume2, VolumeX, Eye } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 import startersFile from '@/data/starters.json';
@@ -35,6 +35,10 @@ interface GameStatistics {
 
 interface StatsDisplayProps {
   className?: string;
+  correctStarters: number;
+  totalStarters: number;
+  correctBonuses: number;
+  totalBonuses: number;
 }
 
 type GameState = 'ready' | 'playing' | 'answer' | 'bonus' | 'session';
@@ -42,6 +46,25 @@ type GameState = 'ready' | 'playing' | 'answer' | 'bonus' | 'session';
 const SAMPLE_STARTERS: Question[] = startersFile.starters;
 const SAMPLE_BONUSES: BonusSet[] = bonusesFile.bonuses;
 const STARTER_TIME_LIMIT = 60000; // 60 seconds
+
+const StatsDisplay: React.FC<StatsDisplayProps> = ({ 
+  className = "", 
+  correctStarters, 
+  totalStarters, 
+  correctBonuses, 
+  totalBonuses 
+}) => (
+  <div className={`space-y-1 ${className}`}>
+    <p className="text-sm text-gray-600">
+      Starter Questions: {correctStarters}/{totalStarters} correct
+      {totalStarters > 0 && ` (${Math.round((correctStarters / totalStarters) * 100)}%)`}
+    </p>
+    <p className="text-sm text-gray-600">
+      Bonus Questions: {correctBonuses}/{totalBonuses} correct
+      {totalBonuses > 0 && ` (${Math.round((correctBonuses / totalBonuses) * 100)}%)`}
+    </p>
+  </div>
+);
 
 const UniversityChallengeGame: React.FC = () => {
   const [starters, setStarters] = useState<Question[]>([...SAMPLE_STARTERS]);
@@ -58,8 +81,11 @@ const UniversityChallengeGame: React.FC = () => {
   const [showBonusAnswer, setShowBonusAnswer] = useState<boolean>(false);
   const [showAllHistory, setShowAllHistory] = useState<boolean>(false);
   const [statistics, setStatistics] = useState<GameStatistics[]>(() => {
-    const savedStats = localStorage.getItem('universityChallenge_stats');
-    return savedStats ? JSON.parse(savedStats) : [];
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('universityChallenge_stats');
+      return savedStats ? JSON.parse(savedStats) : [];
+    }
+    return [];
   });
   const [incorrectBuzzes, setIncorrectBuzzes] = useState<number>(0);
   const [correctStarters, setCorrectStarters] = useState<number>(0);
@@ -69,13 +95,15 @@ const UniversityChallengeGame: React.FC = () => {
   const [currentBonusSet, setCurrentBonusSet] = useState<BonusSet | null>(null);
   
   const buzzerSound = useRef<HTMLAudioElement | null>(null);
-  const startTime = useRef<number | null>(null);
-  const timerInterval = useRef<NodeJS.Timeout | null>(null);
+  const startTime = useRef<number>(0);
+  const timerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     buzzerSound.current = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACA');
     return () => {
-      if (timerInterval.current) clearInterval(timerInterval.current);
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current);
+      }
     };
   }, []);
 
@@ -84,7 +112,7 @@ const UniversityChallengeGame: React.FC = () => {
       const timestamp = new Date().toISOString();
       const avgBuzzTime = getAverageBuzzTime();
       const newStat = { 
-        id: Date.now(),  // Unique identifier for each session
+        id: Date.now(),
         date: timestamp,
         avgBuzzTime, 
         score, 
@@ -95,12 +123,14 @@ const UniversityChallengeGame: React.FC = () => {
         totalBonuses 
       };
       setStatistics((prevStats) => {
-        const updatedStats = [...prevStats, newStat];  // Keep all sessions
-        localStorage.setItem('universityChallenge_stats', JSON.stringify(updatedStats));
+        const updatedStats = [...prevStats, newStat];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('universityChallenge_stats', JSON.stringify(updatedStats));
+        }
         return updatedStats;
       });
     }
-  }, [gameState]);
+  }, [gameState, buzzTimes.length]);
 
   const startGame = () => {
     const shuffledStarters = [...SAMPLE_STARTERS].sort(() => Math.random() - 0.5);
@@ -119,30 +149,23 @@ const UniversityChallengeGame: React.FC = () => {
     startTimer();
   };
 
-  const StatsDisplay: React.FC<StatsDisplayProps> = ({ className = "" }) => (
-    <div className={`space-y-1 ${className}`}>
-      <p className="text-sm text-gray-600">
-        Starter Questions: {correctStarters}/{totalStarters} correct
-        {totalStarters > 0 && ` (${Math.round((correctStarters / totalStarters) * 100)}%)`}
-      </p>
-      <p className="text-sm text-gray-600">
-        Bonus Questions: {correctBonuses}/{totalBonuses} correct
-        {totalBonuses > 0 && ` (${Math.round((correctBonuses / totalBonuses) * 100)}%)`}
-      </p>
-    </div>
-  );
-  
   const startTimer = () => {
     startTime.current = Date.now();
     setTimerRunning(true);
     setElapsedTime(0);
+
+    if (timerInterval.current) {
+      clearInterval(timerInterval.current);
+    }
 
     timerInterval.current = setInterval(() => {
       const elapsed = Date.now() - startTime.current;
       setElapsedTime(elapsed);
 
       if (elapsed >= STARTER_TIME_LIMIT) {
-        clearInterval(timerInterval.current);
+        if (timerInterval.current) {
+          clearInterval(timerInterval.current);
+        }
         setTimerRunning(false);
         handleTimeUp();
       }
@@ -158,11 +181,13 @@ const UniversityChallengeGame: React.FC = () => {
   const handleBuzz = () => {
     if (gameState !== 'playing') return;
 
-    clearInterval(timerInterval.current);
+    if (timerInterval.current) {
+      clearInterval(timerInterval.current);
+    }
     setTimerRunning(false);
 
     if (soundEnabled && buzzerSound.current) {
-      buzzerSound.current.play();
+      buzzerSound.current.play().catch(console.error);
     }
 
     const buzzTime = Date.now() - startTime.current;
@@ -253,14 +278,13 @@ const UniversityChallengeGame: React.FC = () => {
   };
 
   const formatTime = (ms: number): string => {
-      return (ms / 1000).toFixed(2);
+    return (ms / 1000).toFixed(2);
   };
 
   const renderChart = () => {
     if (statistics.length === 0) return null;
 
     const validStats = statistics.filter(stat => stat.id && stat.date);
-
     const displayedStats = showAllHistory ? validStats : validStats.slice(-10);
     const chartData = displayedStats.map(stat => ({
       date: new Date(stat.date).toLocaleString('en-US', {
@@ -312,7 +336,7 @@ const UniversityChallengeGame: React.FC = () => {
         </CardTitle>
       </CardHeader>
 
-      <CardContent>
+<CardContent>
         {gameState === 'ready' ? (
           <div className="text-center space-y-4">
             <p className="text-lg">Ready to test your University Challenge knowledge?</p>
@@ -341,7 +365,13 @@ const UniversityChallengeGame: React.FC = () => {
           </div>
         ) : gameState === 'session' ? (
           <div className="text-center space-y-4">
-            <StatsDisplay className="mb-6" />
+            <StatsDisplay 
+              className="mb-6"
+              correctStarters={correctStarters}
+              totalStarters={totalStarters}
+              correctBonuses={correctBonuses}
+              totalBonuses={totalBonuses}
+            />
             <Button onClick={handleNextQuestion}>Continue with Next Starter</Button>
             <Button variant="outline" onClick={endSession}>End Session</Button>
           </div>
@@ -355,7 +385,12 @@ const UniversityChallengeGame: React.FC = () => {
                     Time: {formatTime(elapsedTime)}s
                   </span>
                 )}
-                <StatsDisplay />
+                <StatsDisplay 
+                  correctStarters={correctStarters}
+                  totalStarters={totalStarters}
+                  correctBonuses={correctBonuses}
+                  totalBonuses={totalBonuses}
+                />
               </div>
             </div>
 
@@ -440,4 +475,4 @@ const UniversityChallengeGame: React.FC = () => {
   );
 };
 
-export default UniversityChallengeGame
+export default UniversityChallengeGame;
