@@ -70,7 +70,7 @@ const UniversityChallengeGame: React.FC = () => {
   
   const buzzerSound = useRef<HTMLAudioElement | null>(null);
   const startTime = useRef<number | null>(null);
-  const timerInterval = useRef<NodeJS.Timeout | null>(null);  const STARTER_TIME_LIMIT = 60000; // 60 seconds
+  const timerInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     buzzerSound.current = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACA');
@@ -173,7 +173,7 @@ const UniversityChallengeGame: React.FC = () => {
     setTotalStarters((prevTotal) => prevTotal + 1);
   };
 
-  const handleAnswer = (correct) => {
+  const handleAnswer = (correct: boolean): void => {
     if (!starters[currentQuestion]) {
       console.error("Invalid current question or starters array:", { currentQuestion, starters });
       return;
@@ -205,7 +205,7 @@ const UniversityChallengeGame: React.FC = () => {
     );
   };
 
-  const handleBonusAnswer = (correct) => {
+  const handleBonusAnswer = (correct: boolean): void => {
     if (bonuses.length === 0) return;
 
     if (correct) {
@@ -252,8 +252,8 @@ const UniversityChallengeGame: React.FC = () => {
     return buzzTimes.reduce((a, b) => a + b, 0) / buzzTimes.length;
   };
 
-  const formatTime = (ms) => {
-    return (ms / 1000).toFixed(2);
+  const formatTime = (ms: number): string => {
+      return (ms / 1000).toFixed(2);
   };
 
   const renderChart = () => {
