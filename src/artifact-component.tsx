@@ -72,7 +72,6 @@ const UniversityChallengeGame: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('ready');
   const [currentQuestion, setCurrentQuestion] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
-  const [showAnswer, setShowAnswer] = useState<boolean>(false);
   const [currentBonus, setCurrentBonus] = useState<number>(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
@@ -137,7 +136,6 @@ const UniversityChallengeGame: React.FC = () => {
     setGameState('playing');
     setScore(0);
     setCurrentQuestion(0);
-    setShowAnswer(false);
     setBuzzTimes([]);
     setIncorrectBuzzes(0);
     setCorrectStarters(0);
@@ -174,7 +172,6 @@ const UniversityChallengeGame: React.FC = () => {
 
   const handleTimeUp = () => {
     setGameState('answer');
-    setShowAnswer(true);
     setTotalStarters((prevTotal) => prevTotal + 1);
   };
 
@@ -193,7 +190,6 @@ const UniversityChallengeGame: React.FC = () => {
     const buzzTime = Date.now() - startTime.current;
     setBuzzTimes((prevBuzzTimes) => [...prevBuzzTimes, buzzTime]);
 
-    setShowAnswer(true);
     setGameState('answer');
     setTotalStarters((prevTotal) => prevTotal + 1);
   };
@@ -255,7 +251,6 @@ const UniversityChallengeGame: React.FC = () => {
   const handleNextQuestion = () => {
     if (starters.length > 0) {
       setCurrentQuestion(0);
-      setShowAnswer(false);
       setShowBonusAnswer(false);
       setGameState('playing');
       startTimer();
