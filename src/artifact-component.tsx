@@ -7,42 +7,70 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import startersFile from '@/data/starters.json';
 import bonusesFile from '@/data/bonuses.json';
 
-const SAMPLE_STARTERS = startersFile.starters;
-const SAMPLE_BONUSES = bonusesFile.bonuses;
+interface Question {
+  question: string;
+  answer: string;
+  points: number;
+}
 
-const UniversityChallengeGame = () => {
-  const [starters, setStarters] = useState([...SAMPLE_STARTERS]);
-  const [bonuses, setBonuses] = useState([...SAMPLE_BONUSES]);
+interface BonusSet {
+  topic: string;
+  questions: Array<{
+    question: string;
+    answer: string;
+  }>;
+}
 
-  useEffect(() => {
-    console.log('Starters and Bonuses loaded:', { starters, bonuses });
-  }, [starters, bonuses]);
+interface GameStatistics {
+  id: number;
+  date: string;
+  avgBuzzTime: number;
+  score: number;
+  incorrectBuzzes: number;
+  correctStarters: number;
+  totalStarters: number;
+  correctBonuses: number;
+  totalBonuses: number;
+}
 
-  const [gameState, setGameState] = useState('ready');
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [score, setScore] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [currentBonus, setCurrentBonus] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [buzzTimes, setBuzzTimes] = useState([]);
-  const [showBonusAnswer, setShowBonusAnswer] = useState(false);
-  const [showAllHistory, setShowAllHistory] = useState(false);
-  const [statistics, setStatistics] = useState(() => {
+interface StatsDisplayProps {
+  className?: string;
+}
+
+type GameState = 'ready' | 'playing' | 'answer' | 'bonus' | 'session';
+
+const SAMPLE_STARTERS: Question[] = startersFile.starters;
+const SAMPLE_BONUSES: BonusSet[] = bonusesFile.bonuses;
+const STARTER_TIME_LIMIT = 60000; // 60 seconds
+
+const UniversityChallengeGame: React.FC = () => {
+  const [starters, setStarters] = useState<Question[]>([...SAMPLE_STARTERS]);
+  const [bonuses, setBonuses] = useState<BonusSet[]>([...SAMPLE_BONUSES]);
+  const [gameState, setGameState] = useState<GameState>('ready');
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [score, setScore] = useState<number>(0);
+  const [showAnswer, setShowAnswer] = useState<boolean>(false);
+  const [currentBonus, setCurrentBonus] = useState<number>(0);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [timerRunning, setTimerRunning] = useState<boolean>(false);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [buzzTimes, setBuzzTimes] = useState<number[]>([]);
+  const [showBonusAnswer, setShowBonusAnswer] = useState<boolean>(false);
+  const [showAllHistory, setShowAllHistory] = useState<boolean>(false);
+  const [statistics, setStatistics] = useState<GameStatistics[]>(() => {
     const savedStats = localStorage.getItem('universityChallenge_stats');
     return savedStats ? JSON.parse(savedStats) : [];
   });
-  const [incorrectBuzzes, setIncorrectBuzzes] = useState(0);
-  const [correctStarters, setCorrectStarters] = useState(0);
-  const [totalStarters, setTotalStarters] = useState(0);
-  const [correctBonuses, setCorrectBonuses] = useState(0);
-  const [totalBonuses, setTotalBonuses] = useState(0);
-  const [currentBonusSet, setCurrentBonusSet] = useState(null);
-  const buzzerSound = useRef(null);
-  const startTime = useRef(null);
-  const timerInterval = useRef(null);
-  const STARTER_TIME_LIMIT = 60000; // 60 seconds
+  const [incorrectBuzzes, setIncorrectBuzzes] = useState<number>(0);
+  const [correctStarters, setCorrectStarters] = useState<number>(0);
+  const [totalStarters, setTotalStarters] = useState<number>(0);
+  const [correctBonuses, setCorrectBonuses] = useState<number>(0);
+  const [totalBonuses, setTotalBonuses] = useState<number>(0);
+  const [currentBonusSet, setCurrentBonusSet] = useState<BonusSet | null>(null);
+  
+  const buzzerSound = useRef<HTMLAudioElement | null>(null);
+  const startTime = useRef<number | null>(null);
+  const timerInterval = useRef<NodeJS.Timeout | null>(null);  const STARTER_TIME_LIMIT = 60000; // 60 seconds
 
   useEffect(() => {
     buzzerSound.current = new Audio('data:audio/wav;base64,UklGRnQGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YU8GAACA');
@@ -91,7 +119,7 @@ const UniversityChallengeGame = () => {
     startTimer();
   };
 
-  const StatsDisplay = ({ className = "" }) => (
+  const StatsDisplay: React.FC<StatsDisplayProps> = ({ className = "" }) => (
     <div className={`space-y-1 ${className}`}>
       <p className="text-sm text-gray-600">
         Starter Questions: {correctStarters}/{totalStarters} correct
@@ -103,7 +131,7 @@ const UniversityChallengeGame = () => {
       </p>
     </div>
   );
-
+  
   const startTimer = () => {
     startTime.current = Date.now();
     setTimerRunning(true);
