@@ -1,0 +1,58 @@
+{
+  "questions": [
+    {
+      "starter": {
+        "question": "What letter and number denote the vitamin which is also the designated food colour E101? It imparts a yellow-orange colour to commercial vitamin supplements.",
+        "answer": "B2 (riboflavin)",
+        "points": 10
+      },
+      "bonuses": {
+        "topic": "Questions on Quakers",
+        "questions": [
+          {
+            "question": "Raised as a Quaker on the farm of his aunt, which Hollywood actor became the first to be nominated posthumously for an Academy Award as Best Actor after his death in 1955?",
+            "answer": "James Dean",
+            "points": 5
+          },
+          {
+            "question": "A statue to Joseph Pease, the railway pioneer who became the first Quaker MP, stands in which town of north-east England, where he was born in 1799?",
+            "answer": "Darlington",
+            "points": 5
+          },
+          {
+            "question": "Born into a Quaker family in Cumberland, which scientist published his atomic theory in the 1808 work A New System of Chemical Philosophy?",
+            "answer": "John Dalton",
+            "points": 5
+          }
+        ]
+      }
+    },
+    {
+      "starter": {
+        "question": "Which English county shares its name with a breed of pig, a type of cheese, and a variety of apple?",
+        "answer": "Berkshire",
+        "points": 10
+      },
+      "bonuses": {
+        "topic": "Scientific Units",
+        "questions": [
+          {
+            "question": "Named after a French physicist, what unit is used to measure luminous intensity?",
+            "answer": "Candela",
+            "points": 5
+          },
+          {
+            "question": "What unit of electrical capacitance is equivalent to one coulomb per volt?",
+            "answer": "Farad",
+            "points": 5
+          },
+          {
+            "question": "What derived SI unit measures magnetic flux density?",
+            "answer": "Tesla",
+            "points": 5
+          }
+        ]
+      }
+    }
+  ]
+}
